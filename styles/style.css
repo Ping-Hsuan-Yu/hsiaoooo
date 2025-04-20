@@ -1,0 +1,20 @@
+/* Page Transition Animation */
+#page-content {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+body.page-is-transitioning #page-content {
+  opacity: 0;
+}
+
+/* Fluid background */
+.bg-fluid {
+  background-image: url("../assets/fluid-bg.webp");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+html {
+  scroll-behavior: smooth;
+}

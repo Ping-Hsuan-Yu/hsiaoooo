@@ -1,7 +1,7 @@
 Generated with [vike.dev/new](https://vike.dev/new) ([version 419](https://www.npmjs.com/package/create-vike/v/0.0.419)) using this command:
 
 ```sh
-npm create vike@latest --- --react
+npm create vike@latest --- --react --tailwindcss
 ```
 
 ## Contents

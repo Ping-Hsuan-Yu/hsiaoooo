@@ -1,17 +1,17 @@
-import React from "react";
-import { Counter } from "./Counter.js";
+import About from "./About";
+import Contact from "./Contact";
+import Hello from "./Hello";
+import Pricing from "./Pricing";
+import Project from "./Project";
 
 export default function Page() {
   return (
     <>
-      <h1>My Vike app</h1>
-      This page is:
-      <ul>
-        <li>Rendered to HTML.</li>
-        <li>
-          Interactive. <Counter />
-        </li>
-      </ul>
+      <Hello />
+      <About />
+      <Project />
+      <Pricing />
+      <Contact />
     </>
   );
 }

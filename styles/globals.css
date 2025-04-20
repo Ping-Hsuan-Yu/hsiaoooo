@@ -1,0 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Inria+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@500&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  --default-font-family: "Inria Sans", "Noto Sans TC", ui-sans-serif, system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-abhaya: "Abhaya Libre", sans-serif;
+  --color-black:#383838;
+  --color-light-gray:#828282;
+}
+
+.layout-index > * {
+  @apply px-4
+}
