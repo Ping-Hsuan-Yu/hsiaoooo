@@ -4,8 +4,8 @@ import { defineConfig } from "vite";
 import vike from "vike/plugin";
 
 export default defineConfig({
-  base: "/hsiaoooo/",
-  plugins: [vike({}), react({}), tailwindcss()],
+  base: "/hsiaoooo",
+  plugins: [vike({ prerender: true }), react({}), tailwindcss()],
   build: {
     target: "es2022",
   },
