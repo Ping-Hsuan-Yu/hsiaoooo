@@ -10,11 +10,11 @@ export default function Hello() {
 }
 
 const menuItems = [
-    { name: "Hello", link: "/" },
-    { name: "About", link: "/#about" },
-    { name: "Project", link: "/#project" },
-    { name: "Pricing", link: "/#pricing" },
-    { name: "Contact", link: "/#contact" },
+    { name: "Hello", link: "" },
+    { name: "About", link: "#about" },
+    { name: "Project", link: "#project" },
+    { name: "Pricing", link: "#pricing" },
+    { name: "Contact", link: "#contact" },
 ];
 
 function NavBar() {

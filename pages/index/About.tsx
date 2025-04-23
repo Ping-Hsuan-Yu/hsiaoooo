@@ -21,10 +21,12 @@ export default function About() {
                 </div>
                 <div className="mx-2 hidden md:block"><img src={Avatar} alt="Avatar" /></div>
             </div>
-            <button className="flex items-center gap-2 bg-black text-white px-4 py-1 rounded-full mt-6">
-                <span>Go to CV</span>
-                <span>→</span>
-            </button>
+            <div className="inline-block">
+                <a href="/hsiaoooo/about" className="flex items-center gap-2 bg-black text-white px-4 py-1 rounded-full mt-6">
+                    <span>Go to CV</span>
+                    <span>→</span>
+                </a>
+            </div>
         </div>
     )
 }
