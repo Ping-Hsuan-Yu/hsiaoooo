@@ -18,3 +18,12 @@ body.page-is-transitioning #page-content {
 html {
   scroll-behavior: smooth;
 }
+
+.project-list:hover .project {
+  opacity: 0.3;
+}
+
+.project:hover .arrow {
+  visibility: visible;
+  translate: 0 0;
+}

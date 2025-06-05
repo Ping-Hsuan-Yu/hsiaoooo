@@ -4,7 +4,7 @@ export default function Hello() {
     return (
         <div className="bg-fluid h-dvh">
             <NavBar />
-            <img src={BouziUniverse} alt="Bouzi Universe" className="absolute left-4 bottom-8" />
+            <img src={BouziUniverse} alt="Bouzi Universe" className="absolute left-4 md:left-8 lg:left-16 bottom-8" />
         </div>
     );
 }
