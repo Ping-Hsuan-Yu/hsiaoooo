@@ -1,11 +1,27 @@
-import Avatar from '../../assets/about-avatar.png'
-import Back from '../../assets/bouzi-back.svg'
+import Image from 'next/image'
+import Link from 'next/link'
 
 const experience = [
-  { time: '2O21.04-至今', title: '自由接案工作者', description: '' },
-  { time: '2O20.12-2O21.04', title: '佳佳百貨有限公司', description: '設計助理' },
-  { time: '2017.09-2020.09', title: '生洋網路股份有限公司', description: '視覺設計師' },
-  { time: '2O13-2O17', title: '世新大學圖文傳播暨數位出版學系', description: '學士畢業' }
+  {
+    time: '2O21.04-至今',
+    title: '自由接案工作者',
+    description: ''
+  },
+  {
+    time: '2O20.12-2O21.04',
+    title: '佳佳百貨有限公司',
+    description: '設計助理'
+  },
+  {
+    time: '2017.09-2020.09',
+    title: '生洋網路股份有限公司',
+    description: '視覺設計師'
+  },
+  {
+    time: '2O13-2O17',
+    title: '世新大學圖文傳播暨數位出版學系',
+    description: '學士畢業'
+  }
 ]
 
 const skills = [
@@ -14,16 +30,16 @@ const skills = [
   { title: '語言', name: '中文 / 英文' }
 ]
 
-export default function Page() {
+export default function AboutPage() {
   return (
     <main className='mt-20 max-w-5xl mx-auto'>
       <section className='flex flex-col md:flex-row-reverse mb-10'>
         <div className='md:hidden mx-auto'>
-          <img src={Avatar} alt='' />
+          <Image src='/images/about-avatar.png' alt='' width={300} height={300} />
         </div>
         <div>
           <div className='hidden md:block float-right w-1/3 mt-8 ms-8'>
-            <img src={Avatar} alt='' />
+            <Image src='/images/about-avatar.png' alt='' width={300} height={300} />
           </div>
           <p className='font-bold text-3xl'>蕭穎</p>
           <p className='text-xl text-light-gray'>Ying Hsiao</p>
@@ -74,9 +90,10 @@ export default function Page() {
             </div>
           </div>
           <div className='mt-8 flex md:justify-end'>
-            <a href='/'>
-              <img src={Back} alt='' />
-            </a>
+            <Link href='/'>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src='/images/bouzi-back.svg' alt='' />
+            </Link>
           </div>
         </div>
       </section>

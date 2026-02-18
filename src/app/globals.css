@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+@theme {
+  --default-font-family:
+    var(--font-inria-sans), var(--font-noto-sans-tc), ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-abhaya: var(--font-abhaya-libre), sans-serif;
+  --color-black: #383838;
+  --color-light-gray: #828282;
+}
+
+.layout-index > * {
+  @apply px-4 md:px-8 lg:px-16;
+}
+
+/* Fluid background */
+.bg-fluid {
+  background-image: url('/images/fluid-bg.webp');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.project-list:hover .project {
+  opacity: 0.3;
+}
+
+.project:hover .arrow {
+  visibility: visible;
+  translate: 0 0;
+}
