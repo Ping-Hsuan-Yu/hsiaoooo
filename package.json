@@ -1,5 +1,4 @@
 {
-  "homepage": "https://ping-hsuan-yu.github.io/hsiaoooo/",
   "scripts": {
     "dev": "vike dev",
     "build": "vike build",
@@ -20,7 +19,6 @@
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "autoprefixer": "^10.4.21",
-    "gh-pages": "^6.3.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.17",
     "typescript": "^5.8.2",
