@@ -1,8 +1,8 @@
-import About from '@/components/sections/About'
-import Contact from '@/components/sections/Contact'
-import Hello from '@/components/sections/Hello'
-import Pricing from '@/components/sections/Pricing'
-import Project from '@/components/sections/Project'
+import About from '@/app/(sections)/About'
+import Contact from '@/app/(sections)/Contact'
+import Hello from '@/app/(sections)/Hello'
+import Pricing from '@/app/(sections)/Pricing'
+import Project from '@/app/(sections)/Project'
 
 export default function Home() {
   return (
