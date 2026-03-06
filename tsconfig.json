@@ -15,14 +15,30 @@
       "DOM.Iterable",
       "ESNext"
     ],
-    "types": [
-      "vite/client",
-      "vike-react"
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
     ],
-    "jsx": "preserve",
-    "jsxImportSource": "react"
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "allowJs": true,
+    "isolatedModules": true
   },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
   "exclude": [
-    "dist"
+    "node_modules",
+    ".next"
   ]
 }
