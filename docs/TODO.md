@@ -15,6 +15,9 @@
 - [ ] **手機版 (Mobile) 版型：** 
   - 一排固定顯示三張縮圖（參考 IG、Pinterest 網格風格）
 
+## 電腦版
+- [ ] Hover 顯示文字資訊 遮罩圖片
+
 https://www.designisfunny.co/
 https://shadergradient.co/
 https://www.artpartner.com/
