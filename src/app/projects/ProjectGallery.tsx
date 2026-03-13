@@ -34,7 +34,7 @@ export default function ProjectGallery() {
   })
 
   return (
-    <div>
+    <div className='w-full'>
       {/* 篩選器 Filters */}
       <div className='flex flex-wrap gap-3 mb-10'>
         <button
@@ -61,7 +61,7 @@ export default function ProjectGallery() {
       </div>
 
       {/* 圖片網格 Image Grid */}
-      <motion.div layout className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+      <motion.div layout className='w-full columns-2 sm:columns-3 lg:columns-4 gap-3'>
         <AnimatePresence mode='popLayout'>
           {filteredProjects.map(project => (
             <motion.div
@@ -71,14 +71,92 @@ export default function ProjectGallery() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.3 }}
-              className='relative aspect-square overflow-hidden rounded-lg bg-gray-100'>
-              <Image
-                src={project.src}
-                alt={project.tags.join(', ')}
-                fill
-                sizes='(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw'
-                className='object-cover hover:scale-105 transition-transform duration-500'
-              />
+              className='group relative w-full overflow-hidden rounded-none bg-gray-100 mb-3 break-inside-avoid block'>
+              {project.type === 'single' ? (
+                <Image
+                  src={project.src!}
+                  alt={project.tags.join(', ')}
+                  width={1200}
+                  height={1200}
+                  sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                  className='w-full h-auto rounded-none block hover:scale-105 transition-transform duration-500'
+                />
+              ) : (
+                <div className='w-full aspect-square relative hover:scale-105 transition-transform duration-500 overflow-hidden'>
+                  {project.layout === 'layout-1' && (
+                    <div className='absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1'>
+                      {project.images?.map((img, i) => (
+                        <div key={i} className='relative w-full h-full'>
+                          <Image
+                            src={img}
+                            alt=''
+                            fill
+                            className='object-cover rounded-none block'
+                            sizes='(max-width: 640px) 25vw, 15vw'
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {project.layout === 'layout-2' && (
+                    <div className='absolute inset-0 flex flex-col gap-1'>
+                      <div className='relative w-full h-[66.666%]'>
+                        <Image
+                          src={project.images![0]}
+                          alt=''
+                          fill
+                          className='object-cover rounded-none block'
+                          sizes='(max-width: 640px) 50vw, 25vw'
+                        />
+                      </div>
+                      <div className='relative w-full h-[33.333%] grid grid-cols-3 gap-1'>
+                        {project.images?.slice(1, 4).map((img, i) => (
+                          <div key={i} className='relative w-full h-full'>
+                            <Image
+                              src={img}
+                              alt=''
+                              fill
+                              className='object-cover rounded-none block'
+                              sizes='(max-width: 640px) 15vw, 10vw'
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {project.layout === 'layout-3' && (
+                    <div className='absolute inset-0 flex gap-1'>
+                      <div className='relative h-full w-[66.666%]'>
+                        <Image
+                          src={project.images![0]}
+                          alt=''
+                          fill
+                          className='object-cover rounded-none block'
+                          sizes='(max-width: 640px) 50vw, 25vw'
+                        />
+                      </div>
+                      <div className='relative h-full w-[33.333%] grid grid-rows-3 gap-1'>
+                        {project.images?.slice(1, 4).map((img, i) => (
+                          <div key={i} className='relative w-full h-full'>
+                            <Image
+                              src={img}
+                              alt=''
+                              fill
+                              className='object-cover rounded-none block'
+                              sizes='(max-width: 640px) 15vw, 10vw'
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Hover 遮罩效果 */}
+              <div className='absolute inset-0 bg-white/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center pointer-events-none'>
+                <h3 className='text-xl font-bold text-black mb-2'>專案展示標題</h3>
+                <p className='text-sm text-gray-800'>{project.tags.join(', ')}</p>
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

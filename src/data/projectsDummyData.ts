@@ -1,8 +1,13 @@
+export type GroupLayoutType = 'layout-1' | 'layout-2' | 'layout-3'
+
 export type ProjectImage = {
   id: string
-  src: string
   order: number
   tags: string[]
+  type: 'single' | 'group'
+  src?: string
+  layout?: GroupLayoutType
+  images?: string[]
 }
 
 export const projectTags = [
@@ -56,10 +61,29 @@ export const dummyProjects: ProjectImage[] = files.map((file, index) => {
 
   const selectedTags = Array.from(new Set([tag1, tag2]))
 
+  if (index % 5 === 0 && index > 0) {
+    const layoutTypes: GroupLayoutType[] = ['layout-1', 'layout-2', 'layout-3']
+    const layout = layoutTypes[(index / 5) % 3]
+    return {
+      id: `project_${index}`,
+      order: index,
+      tags: selectedTags,
+      type: 'group',
+      layout,
+      images: [
+        `/images/projects/${files[(index + 1) % files.length]}`,
+        `/images/projects/${files[(index + 2) % files.length]}`,
+        `/images/projects/${files[(index + 3) % files.length]}`,
+        `/images/projects/${files[(index + 4) % files.length]}`
+      ]
+    }
+  }
+
   return {
     id: `project_${index}`,
     src: `/images/projects/${file}`,
     order: index,
-    tags: selectedTags
+    tags: selectedTags,
+    type: 'single'
   }
 })
