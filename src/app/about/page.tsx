@@ -78,7 +78,7 @@ export default function AboutPage() {
           </div>
         </div>
         <div>
-          <div className='flex gap-10 md:w-[330px]'>
+          <div className='flex gap-10 md:w-82.5'>
             <span className='text-2xl font-bold'>技能</span>
             <div className='flex flex-col gap-4'>
               {skills.map(({ title, name }) => (

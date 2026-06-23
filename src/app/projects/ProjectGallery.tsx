@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { X } from 'lucide-react'
 import { dummyProjects, projectTags } from '@/data/projectsDummyData'
 
 export default function ProjectGallery() {
@@ -10,6 +12,7 @@ export default function ProjectGallery() {
   const router = useRouter()
 
   const selectedTags = searchParams.getAll('tag')
+  const [activeImage, setActiveImage] = useState<string | null>(null)
 
   const toggleTag = (tag: string) => {
     const newTags = new Set(selectedTags)
@@ -73,20 +76,29 @@ export default function ProjectGallery() {
               transition={{ duration: 0.3 }}
               className='group relative w-full overflow-hidden rounded-none bg-gray-100 mb-3 break-inside-avoid block'>
               {project.type === 'single' ? (
-                <Image
-                  src={project.src!}
-                  alt={project.tags.join(', ')}
-                  width={1200}
-                  height={1200}
-                  sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                  className='w-full h-auto rounded-none block hover:scale-105 transition-transform duration-500'
-                />
+                <div 
+                  className="cursor-zoom-in"
+                  onClick={() => setActiveImage(project.src!)}
+                >
+                  <Image
+                    src={project.src!}
+                    alt={project.tags.join(', ')}
+                    width={1200}
+                    height={1200}
+                    sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                    className='w-full h-auto rounded-none block hover:scale-105 transition-transform duration-500'
+                  />
+                </div>
               ) : (
                 <div className='w-full aspect-square relative hover:scale-105 transition-transform duration-500 overflow-hidden'>
                   {project.layout === 'layout-1' && (
                     <div className='absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1'>
                       {project.images?.map((img, i) => (
-                        <div key={i} className='relative w-full h-full'>
+                        <div 
+                          key={i} 
+                          className='relative w-full h-full cursor-zoom-in'
+                          onClick={() => setActiveImage(img)}
+                        >
                           <Image
                             src={img}
                             alt=''
@@ -100,7 +112,10 @@ export default function ProjectGallery() {
                   )}
                   {project.layout === 'layout-2' && (
                     <div className='absolute inset-0 flex flex-col gap-1'>
-                      <div className='relative w-full h-[66.666%]'>
+                      <div 
+                        className='relative w-full h-[66.666%] cursor-zoom-in'
+                        onClick={() => setActiveImage(project.images![0])}
+                      >
                         <Image
                           src={project.images![0]}
                           alt=''
@@ -111,7 +126,11 @@ export default function ProjectGallery() {
                       </div>
                       <div className='relative w-full h-[33.333%] grid grid-cols-3 gap-1'>
                         {project.images?.slice(1, 4).map((img, i) => (
-                          <div key={i} className='relative w-full h-full'>
+                          <div 
+                            key={i} 
+                            className='relative w-full h-full cursor-zoom-in'
+                            onClick={() => setActiveImage(img)}
+                          >
                             <Image
                               src={img}
                               alt=''
@@ -126,7 +145,10 @@ export default function ProjectGallery() {
                   )}
                   {project.layout === 'layout-3' && (
                     <div className='absolute inset-0 flex gap-1'>
-                      <div className='relative h-full w-[66.666%]'>
+                      <div 
+                        className='relative h-full w-[66.666%] cursor-zoom-in'
+                        onClick={() => setActiveImage(project.images![0])}
+                      >
                         <Image
                           src={project.images![0]}
                           alt=''
@@ -137,7 +159,11 @@ export default function ProjectGallery() {
                       </div>
                       <div className='relative h-full w-[33.333%] grid grid-rows-3 gap-1'>
                         {project.images?.slice(1, 4).map((img, i) => (
-                          <div key={i} className='relative w-full h-full'>
+                          <div 
+                            key={i} 
+                            className='relative w-full h-full cursor-zoom-in'
+                            onClick={() => setActiveImage(img)}
+                          >
                             <Image
                               src={img}
                               alt=''
@@ -161,6 +187,42 @@ export default function ProjectGallery() {
           ))}
         </AnimatePresence>
       </motion.div>
+
+      {/* 放大圖片的 Lightbox Modal */}
+      <AnimatePresence>
+        {activeImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setActiveImage(null)}
+            className='fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 cursor-zoom-out'>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className='relative max-w-5xl max-h-[90vh] w-full h-[80vh] flex items-center justify-center'
+              onClick={e => e.stopPropagation()}>
+              <div className='relative w-full h-full'>
+                <Image
+                  src={activeImage}
+                  alt='Enlarged project image'
+                  fill
+                  className='object-contain'
+                  sizes='100vw'
+                  priority
+                />
+              </div>
+              <button
+                onClick={() => setActiveImage(null)}
+                className='absolute top-4 right-4 text-white hover:text-gray-300 bg-black/50 hover:bg-black/80 rounded-full p-2 transition-colors cursor-pointer z-10'>
+                <X className='w-6 h-6' />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {filteredProjects.length === 0 && (
         <div className='text-center py-20 text-gray-500'>目前沒有符合此標籤的作品。</div>
