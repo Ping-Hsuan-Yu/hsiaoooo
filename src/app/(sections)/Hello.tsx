@@ -1,3 +1,5 @@
+import { NavLink } from '@/components/NavLink'
+
 export default function Hello() {
   return (
     <div className='bg-fluid h-dvh'>
@@ -13,11 +15,11 @@ export default function Hello() {
 }
 
 const menuItems = [
-  { name: 'Hello', link: '' },
-  { name: 'About', link: '#about' },
-  { name: 'Project', link: '#project' },
-  { name: 'Pricing', link: '#pricing' },
-  { name: 'Contact', link: '#contact' }
+  { name: 'Hello', link: '/' },
+  { name: 'About', link: '/#about' },
+  { name: 'Project', link: '/#project' },
+  { name: 'Pricing', link: '/#pricing' },
+  { name: 'Contact', link: '/#contact' }
 ]
 
 function NavBar() {
@@ -25,13 +27,13 @@ function NavBar() {
     <div id='nav-bar' className='font-abhaya pt-8'>
       <ul>
         {menuItems.map((item, index) => (
-          <a key={item.name} href={item.link}>
-            <li className='flex items-baseline gap-1'>
+          <li key={item.name}>
+            <NavLink href={item.link} className='flex items-baseline gap-1'>
               <span className='text-lg'>0{index + 1}</span>
               <span>✦</span>
               <span className='uppercase'>{item.name}</span>
-            </li>
-          </a>
+            </NavLink>
+          </li>
         ))}
       </ul>
     </div>
