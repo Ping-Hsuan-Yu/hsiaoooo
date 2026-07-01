@@ -117,8 +117,92 @@ async function uploadAllOrRollback(files: File[]): Promise<UploadedImage[]> {
 }
 
 function revalidateAll(): void {
+  revalidatePath('/')
   revalidatePath('/projects')
   revalidatePath('/admin')
+}
+
+// ---- 分類 CRUD ----
+
+export async function createCategoryAction(formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  if (!title) throw new Error('分類標題必填')
+
+  const { error } = await db().from('project_categories').insert({ title, description })
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function updateCategoryAction(id: string, formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  if (!title) throw new Error('分類標題必填')
+
+  const { error } = await db().from('project_categories').update({ title, description }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function deleteCategoryAction(id: string): Promise<void> {
+  await requireSession()
+  // DB FK cascade 會自動清掉 project_tags 裡引用這個分類的列
+  const { error } = await db().from('project_categories').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function reorderCategoriesAction(orderedIds: string[]): Promise<void> {
+  await requireSession()
+  await Promise.all(
+    orderedIds.map((id, i) => db().from('project_categories').update({ order: i }).eq('id', id))
+  )
+  revalidateAll()
+}
+
+// ---- 定價 CRUD ----
+
+export async function createPricingAction(formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const price = String(formData.get('price') ?? '').trim()
+  if (!title) throw new Error('標題必填')
+  if (!price) throw new Error('價錢必填')
+
+  const { error } = await db().from('pricing_items').insert({ title, description, price })
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function updatePricingAction(id: string, formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const price = String(formData.get('price') ?? '').trim()
+  if (!title) throw new Error('標題必填')
+  if (!price) throw new Error('價錢必填')
+
+  const { error } = await db().from('pricing_items').update({ title, description, price }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function deletePricingAction(id: string): Promise<void> {
+  await requireSession()
+  const { error } = await db().from('pricing_items').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function reorderPricingAction(orderedIds: string[]): Promise<void> {
+  await requireSession()
+  await Promise.all(
+    orderedIds.map((id, i) => db().from('pricing_items').update({ order: i }).eq('id', id))
+  )
+  revalidateAll()
 }
 
 // ---- CRUD ----
