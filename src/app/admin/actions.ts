@@ -74,7 +74,6 @@ export async function logoutAction(): Promise<void> {
 type ParsedFields = {
   title: string
   description: string
-  tags: string[]
   order: number
   type: 'single' | 'group'
   layout: string | null
@@ -85,14 +84,26 @@ function parseFields(formData: FormData): ParsedFields {
   return {
     title: String(formData.get('title') ?? '').trim(),
     description: String(formData.get('description') ?? '').trim(),
-    tags: String(formData.get('tags') ?? '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean),
     order: Number.isFinite(Number(formData.get('order'))) ? Number(formData.get('order')) : 0,
     type,
     layout: type === 'group' ? String(formData.get('layout') ?? 'layout-1') : null
   }
+}
+
+function parseCategoryIds(formData: FormData): string[] {
+  return formData.getAll('categoryIds').map(String).filter(Boolean)
+}
+
+// create/update 共用：整組替換該作品的標籤關聯
+async function setProjectTags(projectId: string, categoryIds: string[]): Promise<void> {
+  const { error: delErr } = await db().from('project_tags').delete().eq('project_id', projectId)
+  if (delErr) throw new Error(delErr.message)
+  if (categoryIds.length === 0) return
+
+  const { error: insErr } = await db()
+    .from('project_tags')
+    .insert(categoryIds.map(category_id => ({ project_id: projectId, category_id })))
+  if (insErr) throw new Error(insErr.message)
 }
 
 function getFiles(formData: FormData): File[] {
@@ -210,27 +221,31 @@ export async function reorderPricingAction(orderedIds: string[]): Promise<void> 
 export async function createProjectAction(formData: FormData): Promise<void> {
   await requireSession()
   const fields = parseFields(formData)
+  const categoryIds = parseCategoryIds(formData)
   const files = getFiles(formData)
   assertCount(fields.type, files.length)
 
   const images = await uploadAllOrRollback(files)
-  const { error } = await db().from('projects').insert({ ...fields, images })
+  const { data, error } = await db().from('projects').insert({ ...fields, images }).select('id').single()
   if (error) {
     await destroyImages(images.map(u => u.publicId)) // DB 失敗 → 回滾新上傳的圖
     throw new Error(error.message)
   }
+  await setProjectTags(data.id, categoryIds)
   revalidateAll()
 }
 
 export async function updateProjectAction(id: string, formData: FormData): Promise<void> {
   await requireSession()
   const fields = parseFields(formData)
+  const categoryIds = parseCategoryIds(formData)
   const files = getFiles(formData)
 
   // 沒給新圖：只更新 metadata，images 不動
   if (files.length === 0) {
     const { error } = await db().from('projects').update(fields).eq('id', id)
     if (error) throw new Error(error.message)
+    await setProjectTags(id, categoryIds)
     revalidateAll()
     return
   }
@@ -251,6 +266,7 @@ export async function updateProjectAction(id: string, formData: FormData): Promi
     await destroyImages(images.map(u => u.publicId)) // DB 失敗 → 回滾新圖、保留舊圖
     throw new Error(error.message)
   }
+  await setProjectTags(id, categoryIds)
   // DB 成功才刪舊圖
   const oldIds = ((old?.images ?? []) as UploadedImage[]).map(i => i.publicId)
   await destroyImages(oldIds)
