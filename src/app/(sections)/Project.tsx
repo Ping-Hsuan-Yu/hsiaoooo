@@ -1,28 +1,9 @@
 import Link from 'next/link'
+import { getProjectCategories } from '@/lib/projects'
 
-const projects = [
-  { title: '社群專案', description: '粉絲專頁圖文設計', link: '/projects?tag=社群專案' },
-  { title: '廣告Banner', description: '廣告素材 / 電商圖片', link: '/projects?tag=廣告Banner' },
-  {
-    title: '一頁式Landing page',
-    description: '商品頁面 / 銷售頁面製作',
-    link: '/projects?tag=一頁式Landing page'
-  },
-  { title: '動畫製作', description: '簡易小動畫 / GIF', link: '/projects?tag=動畫製作' },
-  {
-    title: '插畫設計',
-    description: '貼圖 / 吉祥物 / 自由創作作品',
-    link: '/projects?tag=插畫設計'
-  },
-  {
-    title: '視覺設計',
-    description: 'LOGO設計 / 招牌設計 / 菜單設計 / 名片設計',
-    link: '/projects?tag=視覺設計'
-  },
-  { title: '商品攝影', description: '商品拍攝後製 / 情境拍攝', link: '/projects?tag=商品攝影' }
-]
+export default async function Project() {
+  const categories = await getProjectCategories()
 
-export default function Project() {
   return (
     <div id='project'>
       <div className='mb-8'>
@@ -30,12 +11,12 @@ export default function Project() {
         <img src='/images/project.svg' alt='Project' />
       </div>
       <div className='project-list'>
-        {projects.map(project => (
+        {categories.map(category => (
           <ProjectCard
-            key={project.title}
-            title={project.title}
-            description={project.description}
-            link={project.link}
+            key={category.id}
+            title={category.title}
+            description={category.description}
+            link={`/projects?tag=${encodeURIComponent(category.title)}`}
           />
         ))}
       </div>
