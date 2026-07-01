@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { Abhaya_Libre, Inria_Sans, Noto_Sans_TC } from 'next/font/google'
+import { Abhaya_Libre, Inria_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import './globals.css'
 
@@ -9,10 +10,14 @@ const inriaSans = Inria_Sans({
   variable: '--font-inria-sans'
 })
 
-const notoSansTC = Noto_Sans_TC({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-noto-sans-tc'
+const lineSeedTW = localFont({
+  src: [
+    { path: './fonts/LINESeedTW_OTF_Th.woff2', weight: '100', style: 'normal' },
+    { path: './fonts/LINESeedTW_OTF_Rg.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/LINESeedTW_OTF_Bd.woff2', weight: '700', style: 'normal' },
+    { path: './fonts/LINESeedTW_OTF_Eb.woff2', weight: '800', style: 'normal' }
+  ],
+  variable: '--font-line-seed-tw'
 })
 
 const abhayaLibre = Abhaya_Libre({
@@ -30,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang='zh-TW'
-      className={`${inriaSans.variable} ${notoSansTC.variable} ${abhayaLibre.variable}`}>
+      className={`${inriaSans.variable} ${lineSeedTW.variable} ${abhayaLibre.variable}`}>
       <body>
         <div className='flex flex-col gap-20 layout-index'>
           {children}

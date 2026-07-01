@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Reorder, useDragControls } from 'framer-motion'
 import { type Project } from '@/lib/projects'
 import {
   createProjectAction,
@@ -10,6 +11,25 @@ import {
   reorderAction,
   logoutAction
 } from './actions'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog'
 
 const thumb = (url: string) =>
   url.includes('/upload/') ? url.replace('/upload/', '/upload/w_200,c_limit,f_auto,q_auto/') : url
@@ -19,125 +39,166 @@ export default function AdminDashboard({ initialProjects }: { initialProjects: P
   const [items, setItems] = useState(initialProjects)
   const [editing, setEditing] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-  const dragId = useRef<string | null>(null)
+  const itemsRef = useRef(items)
+  itemsRef.current = items
 
   // server 重新驗證後同步最新資料
   useEffect(() => setItems(initialProjects), [initialProjects])
 
   const refresh = () => router.refresh()
 
-  const onDrop = (targetId: string) => {
-    const from = dragId.current
-    dragId.current = null
-    if (!from || from === targetId) return
-    const next = [...items]
-    const fromIdx = next.findIndex(p => p.id === from)
-    const toIdx = next.findIndex(p => p.id === targetId)
-    const [moved] = next.splice(fromIdx, 1)
-    next.splice(toIdx, 0, moved)
-    setItems(next)
-    reorderAction(next.map(p => p.id)).then(refresh)
+  // 拖曳過程只更新畫面順序，放手才寫回 server（避免每次交換都打 API）
+  const persistOrder = () => {
+    reorderAction(itemsRef.current.map(p => p.id)).then(refresh)
   }
 
   return (
     <div className='mx-auto max-w-5xl px-4 py-10'>
       <div className='mb-8 flex items-center justify-between'>
-        <h1 className='text-3xl font-bold text-black'>作品後台</h1>
+        <h1 className='text-3xl font-bold'>作品後台</h1>
         <form action={logoutAction}>
-          <button className='rounded-full border border-gray-300 px-4 py-1 hover:border-black'>登出</button>
+          <Button type='submit' variant='outline' className='rounded-full'>
+            登出
+          </Button>
         </form>
       </div>
 
       <div className='mb-8'>
         {creating ? (
-          <ProjectForm
-            onCancel={() => setCreating(false)}
-            onSubmit={async fd => {
-              await createProjectAction(fd)
-              setCreating(false)
-              refresh()
-            }}
-          />
+          <Card>
+            <CardContent>
+              <ProjectForm
+                onCancel={() => setCreating(false)}
+                onSubmit={async fd => {
+                  await createProjectAction(fd)
+                  setCreating(false)
+                  refresh()
+                }}
+              />
+            </CardContent>
+          </Card>
         ) : (
-          <button
-            onClick={() => setCreating(true)}
-            className='rounded-full bg-black px-5 py-2 text-white hover:opacity-80'>
+          <Button onClick={() => setCreating(true)} className='rounded-full'>
             + 新增專案
-          </button>
+          </Button>
         )}
       </div>
 
-      <ul className='flex flex-col gap-3'>
+      <Reorder.Group as='ul' axis='y' values={items} onReorder={setItems} className='flex flex-col gap-3'>
         {items.map(p => (
-          <li
+          <ProjectItem
             key={p.id}
-            draggable
-            onDragStart={() => (dragId.current = p.id)}
-            onDragOver={e => e.preventDefault()}
-            onDrop={() => onDrop(p.id)}
-            className='rounded-xl border border-gray-200 bg-white p-3'>
-            <div className='flex items-center gap-4'>
-              <span className='cursor-grab select-none text-gray-400' title='拖曳排序'>
-                ⠿
-              </span>
-              {p.images[0] && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={thumb(p.images[0].url)}
-                  alt=''
-                  className='h-16 w-16 shrink-0 rounded object-cover'
-                />
-              )}
-              <div className='min-w-0 flex-1'>
-                <div className='truncate font-bold text-black'>{p.title || '（無標題）'}</div>
-                <div className='truncate text-sm text-gray-500'>
-                  {p.type}
-                  {p.layout ? ` · ${p.layout}` : ''} · {p.images.length} 圖 · {p.tags.join(', ')}
-                </div>
-              </div>
-              <button
-                onClick={() => setEditing(editing === p.id ? null : p.id)}
-                className='rounded border border-gray-300 px-3 py-1 text-sm hover:border-black'>
-                {editing === p.id ? '關閉' : '編輯'}
-              </button>
-              <DeleteButton id={p.id} onDone={refresh} />
-            </div>
-
-            {editing === p.id && (
-              <div className='mt-4 border-t border-gray-100 pt-4'>
-                <ProjectForm
-                  project={p}
-                  onCancel={() => setEditing(null)}
-                  onSubmit={async fd => {
-                    await updateProjectAction(p.id, fd)
-                    setEditing(null)
-                    refresh()
-                  }}
-                />
-              </div>
-            )}
-          </li>
+            project={p}
+            editing={editing === p.id}
+            onToggleEdit={() => setEditing(editing === p.id ? null : p.id)}
+            onDragEnd={persistOrder}
+            onDone={refresh}
+            onSubmit={async fd => {
+              await updateProjectAction(p.id, fd)
+              setEditing(null)
+              refresh()
+            }}
+          />
         ))}
-      </ul>
+      </Reorder.Group>
     </div>
+  )
+}
+
+function ProjectItem({
+  project: p,
+  editing,
+  onToggleEdit,
+  onDragEnd,
+  onDone,
+  onSubmit
+}: {
+  project: Project
+  editing: boolean
+  onToggleEdit: () => void
+  onDragEnd: () => void
+  onDone: () => void
+  onSubmit: (fd: FormData) => Promise<void>
+}) {
+  const dragControls = useDragControls()
+
+  return (
+    <Reorder.Item
+      value={p}
+      as='li'
+      dragListener={false}
+      dragControls={dragControls}
+      onDragEnd={onDragEnd}
+      whileDrag={{ scale: 1.02, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
+      <Card>
+        <CardContent>
+          <div className='flex items-center gap-4'>
+            <span
+              onPointerDown={e => dragControls.start(e)}
+              className='cursor-grab touch-none select-none text-muted-foreground'
+              title='拖曳排序'>
+              ⠿
+            </span>
+            {p.images[0] && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={thumb(p.images[0].url)} alt='' className='h-16 w-16 shrink-0 rounded object-cover' />
+            )}
+            <div className='min-w-0 flex-1'>
+              <div className='truncate font-bold'>{p.title || '（無標題）'}</div>
+              <div className='mt-1 flex flex-wrap items-center gap-1.5'>
+                <Badge variant='secondary'>{p.type}</Badge>
+                {p.layout && <Badge variant='outline'>{p.layout}</Badge>}
+                <span className='truncate text-sm text-muted-foreground'>
+                  {p.images.length} 圖 · {p.tags.join(', ')}
+                </span>
+              </div>
+            </div>
+            <Button variant='outline' size='sm' onClick={onToggleEdit}>
+              {editing ? '關閉' : '編輯'}
+            </Button>
+            <DeleteButton id={p.id} onDone={onDone} />
+          </div>
+
+          {editing && (
+            <div className='mt-4 border-t pt-4'>
+              <ProjectForm project={p} onCancel={onToggleEdit} onSubmit={onSubmit} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </Reorder.Item>
   )
 }
 
 function DeleteButton({ id, onDone }: { id: string; onDone: () => void }) {
   const [pending, start] = useTransition()
   return (
-    <button
-      disabled={pending}
-      onClick={() => {
-        if (!confirm('確定刪除？圖片會一併從 Cloudinary 清除。')) return
-        start(async () => {
-          await deleteProjectAction(id)
-          onDone()
-        })
-      }}
-      className='rounded border border-red-300 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50'>
-      刪除
-    </button>
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={
+          <Button variant='destructive' size='sm' disabled={pending}>
+            刪除
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>確定刪除？</AlertDialogTitle>
+          <AlertDialogDescription>圖片會一併從 Cloudinary 清除，此操作無法復原。</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction
+            variant='destructive'
+            onClick={() => start(async () => {
+              await deleteProjectAction(id)
+              onDone()
+            })}>
+            刪除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
@@ -151,6 +212,7 @@ function ProjectForm({
   onCancel: () => void
 }) {
   const [type, setType] = useState<'single' | 'group'>(project?.type === 'group' ? 'group' : 'single')
+  const [layout, setLayout] = useState(project?.layout ?? 'layout-1')
   const [previews, setPreviews] = useState<string[]>([])
   const [error, setError] = useState('')
   const [pending, start] = useTransition()
@@ -165,6 +227,8 @@ function ProjectForm({
         e.preventDefault()
         setError('')
         const fd = new FormData(e.currentTarget)
+        fd.set('type', type)
+        fd.set('layout', layout)
         start(async () => {
           try {
             await onSubmit(fd)
@@ -175,66 +239,66 @@ function ProjectForm({
       }}
       className='flex flex-col gap-3'>
       <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-        <input
-          name='title'
-          defaultValue={project?.title}
-          placeholder='標題'
-          className='rounded border border-gray-300 px-3 py-2'
-        />
-        <input
-          name='order'
-          type='number'
-          defaultValue={project?.order ?? 0}
-          placeholder='順序'
-          className='rounded border border-gray-300 px-3 py-2'
-        />
+        <div className='flex flex-col gap-2'>
+          <Label htmlFor='title'>標題</Label>
+          <Input id='title' name='title' defaultValue={project?.title} placeholder='標題' />
+        </div>
+        <div className='flex flex-col gap-2'>
+          <Label htmlFor='order'>順序</Label>
+          <Input id='order' name='order' type='number' defaultValue={project?.order ?? 0} placeholder='順序' />
+        </div>
       </div>
-      <input
-        name='description'
-        defaultValue={project?.description}
-        placeholder='說明'
-        className='rounded border border-gray-300 px-3 py-2'
-      />
-      <input
-        name='tags'
-        defaultValue={project?.tags.join(', ')}
-        placeholder='標籤（用逗號分隔）'
-        className='rounded border border-gray-300 px-3 py-2'
-      />
+      <div className='flex flex-col gap-2'>
+        <Label htmlFor='description'>說明</Label>
+        <Textarea id='description' name='description' defaultValue={project?.description} placeholder='說明' />
+      </div>
+      <div className='flex flex-col gap-2'>
+        <Label htmlFor='tags'>標籤</Label>
+        <Input id='tags' name='tags' defaultValue={project?.tags.join(', ')} placeholder='標籤（用逗號分隔）' />
+      </div>
       <div className='flex gap-3'>
-        <select
-          name='type'
-          value={type}
-          onChange={e => setType(e.target.value as 'single' | 'group')}
-          className='rounded border border-gray-300 px-3 py-2'>
-          <option value='single'>single（單圖）</option>
-          <option value='group'>group（四圖）</option>
-        </select>
+        <div className='flex flex-col gap-2'>
+          <Label>類型</Label>
+          <Select value={type} onValueChange={v => setType(v as 'single' | 'group')}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='single'>single（單圖）</SelectItem>
+              <SelectItem value='group'>group（四圖）</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {type === 'group' && (
-          <select
-            name='layout'
-            defaultValue={project?.layout ?? 'layout-1'}
-            className='rounded border border-gray-300 px-3 py-2'>
-            <option value='layout-1'>layout-1（2×2）</option>
-            <option value='layout-2'>layout-2（上大下三）</option>
-            <option value='layout-3'>layout-3（左大右三）</option>
-          </select>
+          <div className='flex flex-col gap-2'>
+            <Label>版型</Label>
+            <Select value={layout} onValueChange={v => v && setLayout(v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='layout-1'>layout-1（2×2）</SelectItem>
+                <SelectItem value='layout-2'>layout-2（上大下三）</SelectItem>
+                <SelectItem value='layout-3'>layout-3（左大右三）</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )}
       </div>
 
-      <label className='text-sm text-gray-500'>
-        圖片（需 {need} 張{project ? '；留空＝不更換現有圖片' : ''}）
-        <input
+      <div className='flex flex-col gap-2'>
+        <Label htmlFor='files'>
+          圖片（需 {need} 張{project ? '；留空＝不更換現有圖片' : ''}）
+        </Label>
+        <Input
+          id='files'
           name='files'
           type='file'
           multiple
           accept='image/jpeg,image/png,image/webp,image/avif'
-          onChange={e =>
-            setPreviews(Array.from(e.target.files ?? []).map(f => URL.createObjectURL(f)))
-          }
-          className='mt-1 block w-full text-black'
+          onChange={e => setPreviews(Array.from(e.target.files ?? []).map(f => URL.createObjectURL(f)))}
         />
-      </label>
+      </div>
 
       {(previews.length > 0 ? previews : project?.images.map(i => thumb(i.url)) ?? []).length > 0 && (
         <div className='flex flex-wrap gap-2'>
@@ -245,21 +309,19 @@ function ProjectForm({
         </div>
       )}
 
-      {error && <p className='text-sm text-red-600'>{error}</p>}
+      {error && (
+        <Alert variant='destructive'>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className='flex gap-2'>
-        <button
-          type='submit'
-          disabled={pending}
-          className='rounded-full bg-black px-5 py-2 text-white hover:opacity-80 disabled:opacity-50'>
+        <Button type='submit' disabled={pending} className='rounded-full'>
           {pending ? '處理中…' : project ? '儲存' : '建立'}
-        </button>
-        <button
-          type='button'
-          onClick={onCancel}
-          className='rounded-full border border-gray-300 px-5 py-2 hover:border-black'>
+        </Button>
+        <Button type='button' variant='outline' onClick={onCancel} className='rounded-full'>
           取消
-        </button>
+        </Button>
       </div>
     </form>
   )
