@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Reorder, useDragControls } from 'framer-motion'
 import { type Project } from '@/lib/projects'
@@ -10,6 +10,7 @@ import {
   deleteProjectAction,
   reorderAction
 } from './actions'
+import { useReorderList } from './useReorderList'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -35,21 +36,11 @@ const thumb = (url: string) =>
 
 export default function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
   const router = useRouter()
-  const [items, setItems] = useState(initialProjects)
   const [editing, setEditing] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-  const itemsRef = useRef(items)
-  itemsRef.current = items
-
-  // server 重新驗證後同步最新資料
-  useEffect(() => setItems(initialProjects), [initialProjects])
 
   const refresh = () => router.refresh()
-
-  // 拖曳過程只更新畫面順序，放手才寫回 server（避免每次交換都打 API）
-  const persistOrder = () => {
-    reorderAction(itemsRef.current.map(p => p.id)).then(refresh)
-  }
+  const { items, setItems, persistOrder } = useReorderList(initialProjects, reorderAction, refresh)
 
   return (
     <div>
