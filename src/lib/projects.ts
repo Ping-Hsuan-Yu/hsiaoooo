@@ -63,7 +63,7 @@ export async function getProjects(): Promise<Project[]> {
 
   return ((data ?? []) as ProjectRow[]).map(({ project_tags, ...rest }) => ({
     ...rest,
-    tags: project_tags.map(pt => pt.project_categories.title)
+    tags: project_tags.map(pt => pt.project_categories?.title).filter((t): t is string => Boolean(t))
   }))
 }
 
