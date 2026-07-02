@@ -7,6 +7,7 @@ import { logoutAction } from './actions'
 import { Button } from '@/components/ui/button'
 import ProjectsTab from './ProjectsTab'
 import CategoriesTab from './CategoriesTab'
+import PricingTab from './PricingTab'
 
 export default function AdminDashboard({
   initialProjects,
@@ -43,8 +44,7 @@ export default function AdminDashboard({
           <CategoriesTab initialCategories={initialCategories} />
         </TabsContent>
         <TabsContent value='pricing'>
-          {/* Task 10 補上 PricingTab */}
-          <p className='text-sm text-muted-foreground'>{initialPricing.length} 筆定價（Task 10 完成後這裡會換成完整管理介面）</p>
+          <PricingTab initialPricing={initialPricing} />
         </TabsContent>
       </Tabs>
     </div>
