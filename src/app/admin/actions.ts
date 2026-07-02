@@ -74,7 +74,6 @@ export async function logoutAction(): Promise<void> {
 type ParsedFields = {
   title: string
   description: string
-  tags: string[]
   order: number
   type: 'single' | 'group'
   layout: string | null
@@ -85,14 +84,26 @@ function parseFields(formData: FormData): ParsedFields {
   return {
     title: String(formData.get('title') ?? '').trim(),
     description: String(formData.get('description') ?? '').trim(),
-    tags: String(formData.get('tags') ?? '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean),
     order: Number.isFinite(Number(formData.get('order'))) ? Number(formData.get('order')) : 0,
     type,
     layout: type === 'group' ? String(formData.get('layout') ?? 'layout-1') : null
   }
+}
+
+function parseCategoryIds(formData: FormData): string[] {
+  return formData.getAll('categoryIds').map(String).filter(Boolean)
+}
+
+// create/update 共用：整組替換該作品的標籤關聯
+async function setProjectTags(projectId: string, categoryIds: string[]): Promise<void> {
+  const { error: delErr } = await db().from('project_tags').delete().eq('project_id', projectId)
+  if (delErr) throw new Error(delErr.message)
+  if (categoryIds.length === 0) return
+
+  const { error: insErr } = await db()
+    .from('project_tags')
+    .insert(categoryIds.map(category_id => ({ project_id: projectId, category_id })))
+  if (insErr) throw new Error(insErr.message)
 }
 
 function getFiles(formData: FormData): File[] {
@@ -117,8 +128,92 @@ async function uploadAllOrRollback(files: File[]): Promise<UploadedImage[]> {
 }
 
 function revalidateAll(): void {
+  revalidatePath('/')
   revalidatePath('/projects')
   revalidatePath('/admin')
+}
+
+// ---- 分類 CRUD ----
+
+export async function createCategoryAction(formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  if (!title) throw new Error('分類標題必填')
+
+  const { error } = await db().from('project_categories').insert({ title, description })
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function updateCategoryAction(id: string, formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  if (!title) throw new Error('分類標題必填')
+
+  const { error } = await db().from('project_categories').update({ title, description }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function deleteCategoryAction(id: string): Promise<void> {
+  await requireSession()
+  // DB FK cascade 會自動清掉 project_tags 裡引用這個分類的列
+  const { error } = await db().from('project_categories').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function reorderCategoriesAction(orderedIds: string[]): Promise<void> {
+  await requireSession()
+  await Promise.all(
+    orderedIds.map((id, i) => db().from('project_categories').update({ order: i }).eq('id', id))
+  )
+  revalidateAll()
+}
+
+// ---- 定價 CRUD ----
+
+export async function createPricingAction(formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const price = String(formData.get('price') ?? '').trim()
+  if (!title) throw new Error('標題必填')
+  if (!price) throw new Error('價錢必填')
+
+  const { error } = await db().from('pricing_items').insert({ title, description, price })
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function updatePricingAction(id: string, formData: FormData): Promise<void> {
+  await requireSession()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const price = String(formData.get('price') ?? '').trim()
+  if (!title) throw new Error('標題必填')
+  if (!price) throw new Error('價錢必填')
+
+  const { error } = await db().from('pricing_items').update({ title, description, price }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function deletePricingAction(id: string): Promise<void> {
+  await requireSession()
+  const { error } = await db().from('pricing_items').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidateAll()
+}
+
+export async function reorderPricingAction(orderedIds: string[]): Promise<void> {
+  await requireSession()
+  await Promise.all(
+    orderedIds.map((id, i) => db().from('pricing_items').update({ order: i }).eq('id', id))
+  )
+  revalidateAll()
 }
 
 // ---- CRUD ----
@@ -126,27 +221,31 @@ function revalidateAll(): void {
 export async function createProjectAction(formData: FormData): Promise<void> {
   await requireSession()
   const fields = parseFields(formData)
+  const categoryIds = parseCategoryIds(formData)
   const files = getFiles(formData)
   assertCount(fields.type, files.length)
 
   const images = await uploadAllOrRollback(files)
-  const { error } = await db().from('projects').insert({ ...fields, images })
+  const { data, error } = await db().from('projects').insert({ ...fields, images }).select('id').single()
   if (error) {
     await destroyImages(images.map(u => u.publicId)) // DB 失敗 → 回滾新上傳的圖
     throw new Error(error.message)
   }
+  await setProjectTags(data.id, categoryIds)
   revalidateAll()
 }
 
 export async function updateProjectAction(id: string, formData: FormData): Promise<void> {
   await requireSession()
   const fields = parseFields(formData)
+  const categoryIds = parseCategoryIds(formData)
   const files = getFiles(formData)
 
   // 沒給新圖：只更新 metadata，images 不動
   if (files.length === 0) {
     const { error } = await db().from('projects').update(fields).eq('id', id)
     if (error) throw new Error(error.message)
+    await setProjectTags(id, categoryIds)
     revalidateAll()
     return
   }
@@ -167,6 +266,7 @@ export async function updateProjectAction(id: string, formData: FormData): Promi
     await destroyImages(images.map(u => u.publicId)) // DB 失敗 → 回滾新圖、保留舊圖
     throw new Error(error.message)
   }
+  await setProjectTags(id, categoryIds)
   // DB 成功才刪舊圖
   const oldIds = ((old?.images ?? []) as UploadedImage[]).map(i => i.publicId)
   await destroyImages(oldIds)
