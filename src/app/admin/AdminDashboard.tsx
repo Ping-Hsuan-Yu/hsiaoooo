@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { logoutAction } from './actions'
 import { Button } from '@/components/ui/button'
 import ProjectsTab from './ProjectsTab'
+import CategoriesTab from './CategoriesTab'
 
 export default function AdminDashboard({
   initialProjects,
@@ -39,8 +40,7 @@ export default function AdminDashboard({
           <ProjectsTab initialProjects={initialProjects} />
         </TabsContent>
         <TabsContent value='categories'>
-          {/* Task 9 補上 CategoriesTab */}
-          <p className='text-sm text-muted-foreground'>{initialCategories.length} 個分類（Task 9 完成後這裡會換成完整管理介面）</p>
+          <CategoriesTab initialCategories={initialCategories} />
         </TabsContent>
         <TabsContent value='pricing'>
           {/* Task 10 補上 PricingTab */}
