@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Reorder, useDragControls } from 'framer-motion'
-import { type Project } from '@/lib/projects'
+import { type Project, type ProjectCategoryWithUsage } from '@/lib/projects'
 import {
   createProjectAction,
   updateProjectAction,
@@ -34,7 +34,13 @@ import {
 const thumb = (url: string) =>
   url.includes('/upload/') ? url.replace('/upload/', '/upload/w_200,c_limit,f_auto,q_auto/') : url
 
-export default function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
+export default function ProjectsTab({
+  initialProjects,
+  categories
+}: {
+  initialProjects: Project[]
+  categories: ProjectCategoryWithUsage[]
+}) {
   const router = useRouter()
   const [editing, setEditing] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -49,6 +55,7 @@ export default function ProjectsTab({ initialProjects }: { initialProjects: Proj
           <Card>
             <CardContent>
               <ProjectForm
+                categories={categories}
                 onCancel={() => setCreating(false)}
                 onSubmit={async fd => {
                   await createProjectAction(fd)
@@ -70,6 +77,7 @@ export default function ProjectsTab({ initialProjects }: { initialProjects: Proj
           <ProjectItem
             key={p.id}
             project={p}
+            categories={categories}
             editing={editing === p.id}
             onToggleEdit={() => setEditing(editing === p.id ? null : p.id)}
             onDragEnd={persistOrder}
@@ -88,6 +96,7 @@ export default function ProjectsTab({ initialProjects }: { initialProjects: Proj
 
 function ProjectItem({
   project: p,
+  categories,
   editing,
   onToggleEdit,
   onDragEnd,
@@ -95,6 +104,7 @@ function ProjectItem({
   onSubmit
 }: {
   project: Project
+  categories: ProjectCategoryWithUsage[]
   editing: boolean
   onToggleEdit: () => void
   onDragEnd: () => void
@@ -142,7 +152,7 @@ function ProjectItem({
 
           {editing && (
             <div className='mt-4 border-t pt-4'>
-              <ProjectForm project={p} onCancel={onToggleEdit} onSubmit={onSubmit} />
+              <ProjectForm project={p} categories={categories} onCancel={onToggleEdit} onSubmit={onSubmit} />
             </div>
           )}
         </CardContent>
@@ -185,15 +195,20 @@ function DeleteButton({ id, onDone }: { id: string; onDone: () => void }) {
 
 function ProjectForm({
   project,
+  categories,
   onSubmit,
   onCancel
 }: {
   project?: Project
+  categories: ProjectCategoryWithUsage[]
   onSubmit: (fd: FormData) => Promise<void>
   onCancel: () => void
 }) {
   const [type, setType] = useState<'single' | 'group'>(project?.type === 'group' ? 'group' : 'single')
   const [layout, setLayout] = useState(project?.layout ?? 'layout-1')
+  const [categoryIds, setCategoryIds] = useState<string[]>(
+    project ? categories.filter(c => project.tags.includes(c.title)).map(c => c.id) : []
+  )
   const [previews, setPreviews] = useState<string[]>([])
   const [error, setError] = useState('')
   const [pending, start] = useTransition()
@@ -234,8 +249,20 @@ function ProjectForm({
         <Textarea id='description' name='description' defaultValue={project?.description} placeholder='說明' />
       </div>
       <div className='flex flex-col gap-2'>
-        <Label htmlFor='tags'>標籤</Label>
-        <Input id='tags' name='tags' defaultValue={project?.tags.join(', ')} placeholder='標籤（用逗號分隔）' />
+        <Label htmlFor='categoryIds'>標籤</Label>
+        <Select multiple name='categoryIds' value={categoryIds} onValueChange={v => setCategoryIds(v as string[])}>
+          <SelectTrigger id='categoryIds' className='w-full'>
+            <SelectValue placeholder='選擇標籤' />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(c => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {categoryIds.length === 0 && <p className='text-sm text-amber-600'>標籤未設定</p>}
       </div>
       <div className='flex gap-3'>
         <div className='flex flex-col gap-2'>

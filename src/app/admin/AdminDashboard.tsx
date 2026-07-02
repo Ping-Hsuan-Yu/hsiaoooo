@@ -38,7 +38,7 @@ export default function AdminDashboard({
           <TabsTrigger value='pricing'>定價</TabsTrigger>
         </TabsList>
         <TabsContent value='projects'>
-          <ProjectsTab initialProjects={initialProjects} />
+          <ProjectsTab initialProjects={initialProjects} categories={initialCategories} />
         </TabsContent>
         <TabsContent value='categories'>
           <CategoriesTab initialCategories={initialCategories} />
