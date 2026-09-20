@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import BackHome from '@/components/BackHome'
 
 const experience = [
   {
@@ -33,6 +34,7 @@ const skills = [
 export default function AboutPage() {
   return (
     <main className='mt-20 max-w-5xl mx-auto'>
+      <BackHome />
       <section className='flex flex-col md:flex-row-reverse mb-10'>
         <div className='md:hidden mx-auto'>
           <Image src='/images/about-avatar.png' alt='' width={300} height={300} />

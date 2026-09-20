@@ -1,4 +1,5 @@
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary'
+import { warmLightboxImage } from '@/lib/lightboxImage'
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -18,6 +19,8 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
       )
       .end(buf)
   })
+  // 背景預熱 lightbox 尺寸，別讓第一個點開的訪客等 Cloudinary 現轉
+  void warmLightboxImage(res.public_id)
   return { url: res.secure_url, width: res.width, height: res.height, alt: '', publicId: res.public_id }
 }
 

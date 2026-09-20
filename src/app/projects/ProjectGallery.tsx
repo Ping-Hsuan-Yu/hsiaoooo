@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { CldImage, getCldImageUrl } from 'next-cloudinary'
+import { CldImage } from 'next-cloudinary'
 import { X } from 'lucide-react'
 import { type Project, type ProjectImage, deriveTags } from '@/lib/projects'
+import { lightboxImageUrl } from '@/lib/lightboxImage'
 
 export default function ProjectGallery({ projects }: { projects: Project[] }) {
   const searchParams = useSearchParams()
@@ -14,14 +15,24 @@ export default function ProjectGallery({ projects }: { projects: Project[] }) {
   const selectedTags = searchParams.getAll('tag')
   const projectTags = deriveTags(projects)
 
-  type ActiveImage = { src: string; rect: { top: number; left: number; width: number; height: number }; natW: number; natH: number }
+  type ActiveImage = { src: string; thumb?: string; rect: { top: number; left: number; width: number; height: number }; natW: number; natH: number }
   const [activeImage, setActiveImage] = useState<ActiveImage | null>(null)
 
   // 點擊圖片：記錄畫面上的原始位置/大小，原始比例直接用 DB 存的 width/height（免 async 載圖）
   const openLightbox = (img: ProjectImage, e: React.MouseEvent<HTMLElement>) => {
     const { top, left, width, height } = e.currentTarget.getBoundingClientRect()
-    setActiveImage({ src: getCldImageUrl({ src: img.publicId }), rect: { top, left, width, height }, natW: img.width, natH: img.height })
+    // 順手撈 grid 那張已在 browser cache 的圖，當大圖到齊前的底圖 → 開啟瞬間就有畫面
+    const thumb = e.currentTarget.querySelector('img')?.currentSrc
+    setActiveImage({ src: lightboxImageUrl(img.publicId), thumb, rect: { top, left, width, height }, natW: img.width, natH: img.height })
   }
+
+  // hover 就先把大圖抓進 cache，點下去時通常已備妥（touch 裝置沒 hover，靠上面的寬度限制）
+  const zoomProps = (img: ProjectImage) => ({
+    onClick: (e: React.MouseEvent<HTMLElement>) => openLightbox(img, e),
+    onMouseEnter: () => {
+      new window.Image().src = lightboxImageUrl(img.publicId)
+    }
+  })
 
   // 依原始比例，計算置中、最大填滿視窗 92% 的目標方框
   const getTargetRect = (natW: number, natH: number) => {
@@ -90,14 +101,14 @@ export default function ProjectGallery({ projects }: { projects: Project[] }) {
                 transition={{ duration: 0.3 }}
                 className='group relative w-full overflow-hidden rounded-none bg-gray-100 mb-3 break-inside-avoid block'>
                 {project.type === 'single' ? (
-                  <div className='cursor-zoom-in' onClick={e => openLightbox(cover, e)}>
+                  <div className='cursor-zoom-in' {...zoomProps(cover)}>
                     <CldImage
                       src={cover.publicId}
                       alt={cover.alt || project.title || project.tags.join(', ')}
                       width={cover.width}
                       height={cover.height}
                       crop='limit'
-                      priority={i < 4}
+                      preload={i < 4}
                       sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
                       className='w-full h-auto rounded-none block hover:scale-105 transition-transform duration-500'
                     />
@@ -107,7 +118,7 @@ export default function ProjectGallery({ projects }: { projects: Project[] }) {
                     {project.layout === 'layout-1' && (
                       <div className='absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1'>
                         {project.images.map((img, i) => (
-                          <div key={i} className='relative w-full h-full cursor-zoom-in' onClick={e => openLightbox(img, e)}>
+                          <div key={i} className='relative w-full h-full cursor-zoom-in' {...zoomProps(img)}>
                             <CldImage src={img.publicId} alt={img.alt} fill crop='limit' className='object-cover rounded-none block' sizes='(max-width: 640px) 25vw, 15vw' />
                           </div>
                         ))}
@@ -115,12 +126,12 @@ export default function ProjectGallery({ projects }: { projects: Project[] }) {
                     )}
                     {project.layout === 'layout-2' && (
                       <div className='absolute inset-0 flex flex-col gap-1'>
-                        <div className='relative w-full h-[66.666%] cursor-zoom-in' onClick={e => openLightbox(project.images[0], e)}>
+                        <div className='relative w-full h-[66.666%] cursor-zoom-in' {...zoomProps(project.images[0])}>
                           <CldImage src={project.images[0].publicId} alt={project.images[0].alt} fill crop='limit' className='object-cover rounded-none block' sizes='(max-width: 640px) 50vw, 25vw' />
                         </div>
                         <div className='relative w-full h-[33.333%] grid grid-cols-3 gap-1'>
                           {project.images.slice(1, 4).map((img, i) => (
-                            <div key={i} className='relative w-full h-full cursor-zoom-in' onClick={e => openLightbox(img, e)}>
+                            <div key={i} className='relative w-full h-full cursor-zoom-in' {...zoomProps(img)}>
                               <CldImage src={img.publicId} alt={img.alt} fill crop='limit' className='object-cover rounded-none block' sizes='(max-width: 640px) 15vw, 10vw' />
                             </div>
                           ))}
@@ -129,12 +140,12 @@ export default function ProjectGallery({ projects }: { projects: Project[] }) {
                     )}
                     {project.layout === 'layout-3' && (
                       <div className='absolute inset-0 flex gap-1'>
-                        <div className='relative h-full w-[66.666%] cursor-zoom-in' onClick={e => openLightbox(project.images[0], e)}>
+                        <div className='relative h-full w-[66.666%] cursor-zoom-in' {...zoomProps(project.images[0])}>
                           <CldImage src={project.images[0].publicId} alt={project.images[0].alt} fill crop='limit' className='object-cover rounded-none block' sizes='(max-width: 640px) 50vw, 25vw' />
                         </div>
                         <div className='relative h-full w-[33.333%] grid grid-rows-3 gap-1'>
                           {project.images.slice(1, 4).map((img, i) => (
-                            <div key={i} className='relative w-full h-full cursor-zoom-in' onClick={e => openLightbox(img, e)}>
+                            <div key={i} className='relative w-full h-full cursor-zoom-in' {...zoomProps(img)}>
                               <CldImage src={img.publicId} alt={img.alt} fill crop='limit' className='object-cover rounded-none block' sizes='(max-width: 640px) 15vw, 10vw' />
                             </div>
                           ))}
@@ -164,17 +175,23 @@ export default function ProjectGallery({ projects }: { projects: Project[] }) {
             transition={{ duration: 0.3 }}
             onClick={() => setActiveImage(null)}
             className='fixed inset-0 z-50 bg-black/90 cursor-zoom-out'>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <motion.img
-              src={activeImage.src}
-              alt='Enlarged project image'
+            <motion.div
               onClick={e => e.stopPropagation()}
-              className='fixed object-cover cursor-zoom-out will-change-transform'
+              className='fixed cursor-zoom-out will-change-transform overflow-hidden'
               initial={{ top: activeImage.rect.top, left: activeImage.rect.left, width: activeImage.rect.width, height: activeImage.rect.height }}
               animate={getTargetRect(activeImage.natW, activeImage.natH)}
               exit={{ top: activeImage.rect.top, left: activeImage.rect.left, width: activeImage.rect.width, height: activeImage.rect.height }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            />
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {activeImage.thumb && <img src={activeImage.thumb} alt='' className='absolute inset-0 w-full h-full object-cover' />}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={activeImage.src}
+                alt='Enlarged project image'
+                onLoad={e => (e.currentTarget.style.opacity = '1')}
+                className='absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300'
+              />
+            </motion.div>
             <button
               onClick={() => setActiveImage(null)}
               className='fixed top-4 right-4 text-white hover:text-gray-300 bg-black/50 hover:bg-black/80 rounded-full p-2 transition-colors cursor-pointer z-10'>
